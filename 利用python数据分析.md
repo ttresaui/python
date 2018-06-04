@@ -48,8 +48,7 @@
 - 命令行输入ipython启动
 - 许多Python对象都被格式化为可读性更好的形式
 - Tab键自动完成：包括但不限于查找文件路径下的文件
-- 内省：变量的前面或后面加上一个问号，可以显示相关通用信息；一些字符再配以通配符（*）即可显示所
-有与该通配符表达式相匹配的名称
+- 内省：变量的前面或后面加上一个问号，可以显示相关通用信息；一些字符再配以通配符*即可显示所有与该通配符表达式相匹配的名称
 - %run：所有文件都可以通过%run命令当做Python程序来运行
 - Ctrl-C：中断执行的代码
 - 执行剪贴板中的代码：可以使用%paste和%cpaste两个魔术函数承载剪贴板中的一切文本
@@ -138,3 +137,47 @@ numpy.where(con,x,y)
 ![常用numpy.linalg函数](assets/markdown-img-paste-20180601142527789.png)
 - 随机数生成
 ![部分numpy.random函数](assets/markdown-img-paste-20180601142607669.png)
+
+## 第五章 pandas入门
+
+### pandas的数据结构介绍
+- Series：类似于一维数组的对象，由一组数据以及一组与之相关的数据标签（索引）组成
+- DataFrame：表格型的数据结构
+![可以输入给DataFrame的数据](assets/markdown-img-paste-20180604170930156.png)
+- 索引对象：构建Series或DataFrame时，所用到的任何数组或其他序列的标签都会被转换成一个Index，Index对象不可修改
+![Index对象](assets/markdown-img-paste-20180604171147308.png)
+![Index的方法和属性](assets/markdown-img-paste-20180604171229332.png)
+
+### 基本功能
+- 重新索引：pandas对象的一个重要方法reindex
+![reindex的method选项](assets/markdown-img-paste-20180604172313837.png)
+![reindex函数的参数](assets/markdown-img-paste-20180604173043252.png)
+- 丢弃指定轴上的项：drop方法返回指定轴上删除了指定值的新对象
+- 索引、选取和过滤：利用标签的切片运算，末端是包含的
+![DataFrame的索引选项](assets/markdown-img-paste-20180604174454711.png)
+- 算术运算和数据对齐：在进行对象的运算时，如果存在不同的索引对，则结果的索引就是该索引的并集，自动的数据在不重叠的索引出引入NA值
+1. 算术方法中的填充值：使用算术方法，加入填充参数
+![灵活的算术方法](assets/markdown-img-paste-20180604175000588.png)
+2. DataFrame和Series之间的运算：DataFrame和Series之间的算术运算会将Series的索引匹配到DataFrame的列，然后沿着行一直广播；如果希望匹配行且在列上广播，则必须使用算术方法
+- 函数应用和映射：NumPy的ufuncs（元素级数组方法）也可以用于操作pandas对象；将函数应用到由各列或行所形成的一维数组上，apply方法可以实现；许多常见的数组统计方法都被实现成DataFrame方法，无需apply方法
+- 排序和排名：对行或列索引进行排序，可用sort_index方法；若要按值对Series进行排序，可使用order方法；在DataFrame上，根据一个或多个列中的值，进行排序，将列的名字传递给by选项；排名rank默认通过为各组分配一个平均排名破坏平级关系
+![破坏评级关系的method选项](assets/markdown-img-paste-20180604180136858.png)
+- 带有重复值的轴索引
+
+### 汇总和计算描述统计
+pandas对象拥有一组常用的数学和统计方法，大部分属于约简和汇总统计
+![约简方法的选项](assets/markdown-img-paste-20180604180505128.png)
+![描述和汇总统计](assets/markdown-img-paste-20180604180555867.png)
+- 相关系数和协方差：corr方法和cov方法，DataFrame的corrwith方法，可以计算其列或行跟另个一个Series或DataFrame之间的相关系数
+- 唯一值、值计数以及成员资格
+![相关方法](assets/markdown-img-paste-20180604181920917.png)
+
+### 处理缺失数据
+![NA处理方法](assets/markdown-img-paste-20180604182121449.png)
+- 过滤缺失数据：对于Series，dorpna返回仅含有非空数据和索引值；对于DataFrame，dropna默认丢弃任何含有缺失值的行
+- 填充缺失数据：fillna将缺失值替换为常数值![fillna函数的参数](assets/markdown-img-paste-20180604182556739.png)
+
+### 层次化索引
+层次化索引可以使在一个轴上拥有多个索引级别
+- 重排分级索引：swaplevel接受两个级别编号或名称，返回一个互换了级别的新对象，sortlevel根据单个级别中的值对数据进行排序
+- 根据级别汇总统计
