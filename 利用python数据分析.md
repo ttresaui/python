@@ -190,3 +190,36 @@ pandas对象拥有一组常用的数学和统计方法，大部分属于约简�
 ## 第六章 数据加载、存储和文件格式
 
 ### 读写文本格式的数据
+![pandas中的解析函数](assets/markdown-img-paste-20180605105017443.png)
+![read_csv/read_table函数的参数1](assets/markdown-img-paste-2018060511041478.png)
+![read_csv/read_table函数的参数2](assets/markdown-img-paste-20180605110438351.png)
+- 逐块读取文本文件：读取几行可以通过nrows指定，逐块读取文件，需要设置chunksize
+- 将数据写出到文本格式： to_csv方法，Series有一个from_csv方法
+- 手工处理分隔符格式：对于任何单字符分隔符文件，可以直接使用Python内置的csv模块，将任意已打开的文件对象传给csv.reader，手工输出可以使用csv.writer
+![CSV语支选项](assets/markdown-img-paste-20180605114727259.png)
+- JSON数据：json.loads将JSON字符串转换成Python形式，json.dumps将Python对象转换成JSON格式
+- XML和HTML：Web信息收集，使用lxml库及lxml.html接口，或操作XML数据的lxml.objectify接口
+
+### 二进制数据格式
+实现数据的二进制格式存储最简单的方法之一是使用Python内置的pickle序列化
+- 使用HDF5格式
+- 读取Microsoft Excel文件：pandas的ExcelFile类支持读取Excel中的表格型数据
+
+### 使用HTML和Web API
+requests库
+
+### 使用数据库
+- 存取MongoDB中的数据
+
+## 第七章 数据规整化：清理、转换、合并、重塑
+
+### 合并数据集
+- 数据库分格的DataFrame合并：pandas.merge合并
+![merge函数的参数](assets/markdown-img-paste-20180605150614427.png)
+- 索引上的合并：传入left_index=True或者right_index=True
+- 轴向连接：concat函数
+![concat函数的参数](assets/markdown-img-paste-20180605150909408.png)
+- 合并重叠数据
+
+### 重塑和轴向旋转
+- 重塑层次化索引
