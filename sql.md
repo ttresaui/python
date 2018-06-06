@@ -15,7 +15,6 @@ or a.ORDER_TEXT in (select b.DRUG4 from ,DRUG_DICT_HC b )
 
 
 ```sql
-
 merge into HCC_ID_AZ a
 using
 (select * from
@@ -25,4 +24,15 @@ using
  on (a.id=c.id and a.region='重庆')
  when matched then
   update set a.date_of_birth=b.date_of_birth
+
+```
+```sql
+#根据各省医嘱提取药物信息
+create table HCC_ORDERS_AZ_CQ as
+  select from HCC_ID_AZ a,INP_ORDERS_CQ b
+  where a.ID=b.ID and a.REGION='重庆'
+#根据药物字典表，提取包含里面药物的医嘱信息
+create table HCC_ORDERS_AZ as
+  select b.*,a.* from HCC_DRUGS a,HCC_ORDERS_AZ_CQ b
+  where instr(b.ORDER_TEXT,a.DRUGS_FOR_HCC)>0
 ```
