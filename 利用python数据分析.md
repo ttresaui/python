@@ -222,4 +222,23 @@ requests库
 - 合并重叠数据
 
 ### 重塑和轴向旋转
-- 重塑层次化索引
+- 重塑层次化索引：stack将数据的列旋转为行，unstack将数据的行旋转为列
+- 将长格式转换为宽格式
+
+### 数据转换
+- 移除重复数据：drop_duplicates返回移除了重复行的DataFrame
+- 利用函数或映射进行数据转换：Series的map方法可以接受一个函数或含有映射关系的字典型对象
+- 替换值：replace
+- 重命名轴索引：rename
+- 离散化和面元划分：pandas的cut函数，qcut可以根据样本分位数对数据进行面元划分
+- 检测和过滤异常值
+- 排列和随机采样：利用numpy.random.permutation函数可以实现排列工作
+- 计算指标/哑变量：get_dummies函数将分类变量转换为指标变量
+
+### 字符串操作
+- 字符串对象方法
+![Python内置字符串方法](assets/markdown-img-paste-20180606161659690.png)
+- 正则表达式：regexp，可以通过re.compile创建regexp对象
+![正则表达式方法](assets/markdown-img-paste-20180606162256330.png)
+- pandas中矢量化的字符串函数
+![矢量化的字符串方法](assets/markdown-img-paste-20180606162642795.png)
