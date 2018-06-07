@@ -35,3 +35,4 @@ def data_from_wiki():
 
 if __name__=='__main__':
   data_from_wiki()
+```
