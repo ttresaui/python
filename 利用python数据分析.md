@@ -242,3 +242,23 @@ requests库
 ![正则表达式方法](assets/markdown-img-paste-20180606162256330.png)
 - pandas中矢量化的字符串函数
 ![矢量化的字符串方法](assets/markdown-img-paste-20180606162642795.png)
+
+## 第八章 绘图和可视化
+
+### matplotlib API入门
+使用Pylab模式的IPython（ipython --pylab）或者import matplotlib.pyplot as pyplot
+- Figure和Subplot：matplotlib的图像都位于Figure对象中，用plt.figure创建新的figure，不能通过空的Figure绘图，必须用add_subplot创建subplot，plt.subplots可以创建一个新的Figure并返回一个含有已创建的subplot对象的NumPy数组；subplots_adjust方法可以修改subplot之间的间距
+![pyplot.subplots的选项](assets/markdown-img-paste-20180607162745549.png)
+- 颜色、标记和线型：color，linestyle，marker
+- 刻度、标签和图例
+- 注解以及在Subplot上绘图
+- 图表保存到文件：savfig![savefig选项](assets/markdown-img-paste-20180607163830484.png)
+- matplotlib配置
+
+### pandas中的绘图函数
+- 线型图：plot方法默认生成线型图
+![series.plot方法参数](assets/markdown-img-paste-20180608094053149.png)
+![DataFrame的plot参数](assets/markdown-img-paste-20180608094119901.png)
+- 柱状图：生成线型图的代码中加入kind='bar'或'barh'
+- 直方图和密度图：Series的hist方法可以生成直方图，条用plot时加上kind='kde'生成密度图
+- 散布图：matplotlib的scatter方法
