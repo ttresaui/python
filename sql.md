@@ -55,75 +55,56 @@ create table HCC_RESULT1_AZ as
   select from HCC_RESULT_STAGING_ID_AZ a,HCC_ASSESSMENT_DATE_AZ b
   where a.ID=b.ID and a.REGION=b.REGION and a.VISIT_TIME=b.VISIT_TIME
 
-#提取基表中无医嘱的患者
-create table HCC_1L_AZ as
-  select d.* from HCC_RESULT1_AZ d,
-  (select distinct a.ID,a.REGION from HCC_RESULT1_AZ a
-  minus
-  select distinct b.ID,b.REGION from HCC_ORDERS_AZ b) c
-  where d.ID=c.ID and d.REGION=c.REGION
+#提取1L患者
 
-#提取基表中无医嘱但包含EC的患者
-select distinct c.ID,c.REGION from
-(select a.ID,a.REGION,min(a.VISIT_TIME) as mina,min(b.VISIT_TIME) as minb
-from HCC_1L_AZ a,HCC_EC_AZ b where a.ID=b.ID and a.REGION=b.REGION
-group by a.ID,a.REGION) c
-where c.mina>c.minb
-上述结果为0，证明HCC_1L_AZ表中患者均可划分为1L中，即HCC_1L_AZ可对应分析步骤8中1
+---基表左连接EC表，选择EC时间在基表时间之前
+create table HCC_NOEC_AZ as
+  select a.*,b.VISIT_TIME as EC_DATE from HCC_RESULT1_AZ a
+  left join HCC_EC_DATE_AZ b
+  on a.ID=b.ID and a.REGION=b.REGION and a.VISIT_TIME>=b.VISIT_TIME
 
-#提取基表中有医嘱的患者
-create table HCC_RESULT2_AZ as
-  select * from HCC_RESULT1_AZ
-  minus
-  select * from HCC_1L_AZ
+---在上表基础上选择EC时间是空的患者
+create table HCC_NOEC as
+  select a.* from HCC_NOEC_AZ a where a.EC_DATE is null
 
-#统计基表中有医嘱无PD无EC的患者
-select count(d.ID),d.REGION from
-(
-  (select distinct a.ID,a.REGION from HCC_RESULT2_AZ a
-  minus
-  select distinct b.ID,b.REGION from HCC_PD_AZ b)
-  minus
-  select distinct c.ID,c.REGION from HCC_EC_AZ
-) d group by d.REGION
-此结果对应分析步骤8中2
+---用上表左连接医嘱表选择遗嘱时间在基表时间之前
+create table HCC_1L_T_AZ as
+  select a.*,b.START_DATE_TIME as ST_DATE from HCC_NOEC a
+  left join HCC_ORDERS_DATE_AZ b
+  on a.ID=b.ID and a.REGION=b.REGION and a.VISIT_TIME>b.START_DATE_TIME
 
-#提取基表中有医嘱无EC的患者
-create table HCC_RESULT2_ECNO_AZ as
-  select d.* from HCC_RESULT2_AZ d,
-  (select distinct a.ID,a.REGION from HCC_RESULT2_AZ a
-  minus
-  select distinct b.ID,b.REGION from HCC_EC_AZ b) c
-  where d.ID=c.ID and d.REGION=c.REGION
+---在上表基础上选择医嘱时间是空的患者
+create table HCC_1L as
+  select a.* from HCC_1L_T_AZ a where a.ST_DATE is null
 
-#提取基表中有医嘱，有PD，无EC且PD时间在医嘱时间之后，医嘱时间在基表时间之后
-select * from
-(select a.ID,a.REGION,min(a.VISIT_TIME) as mina,min(b.START_DATE_TIME)
-as minb,min(c.ADMISSION_DATE_TIME)as minc
-from HCC_RESULT2_ECNO_AZ a,HCC_ORDERS_AZ b,HCC_PD_AZ c
-where a.ID=b.ID and b.ID=c.ID and a.REGION=b.REGION and b.REGION=c.REGION
-group by a.ID,a.REGION) e
-where e.mina<e.minb and e.minb<e.minc
-此结果对应分析步骤8中3，也对应分析步骤9种1
 
-#提取基表中有医嘱，有PD，无EC,且医嘱时间在PD和基表时间之后  
-select * from
-(select a.ID,a.REGION,min(a.VISIT_TIME) as mina,min(b.START_DATE_TIME)
-as minb,min(c.ADMISSION_DATE_TIME)as minc
-from HCC_RESULT2_ECNO_AZ a,HCC_ORDERS_AZ b,HCC_PD_AZ c
-where a.ID=b.ID and b.ID=c.ID and a.REGION=b.REGION and b.REGION=c.REGION
-group by a.ID,a.REGION) e
-where e.minb<e.mina and e.minb<e.minc
-此结果对应分析步骤9中2
+#提取2L患者
 
-#提取基表中有医嘱，有PD，有EC，且PD时间在医嘱时间之后，且EC时间在最后
-select * from
-(select a.ID,a.REGION,min(a.VISIT_TIME) as mina,min(b.START_DATE_TIME)
-as minb,min(c.ADMISSION_DATE_TIME) as minc,min(d.VISIT_TIME) as mind
-from HCC_RESULT2_ECNO_AZ a,HCC_ORDERS_AZ b,HCC_PD_AZ c,HCC_EC_AZ d
-where a.ID=b.ID and b.ID=c.ID and c.ID=d.ID
-and a.REGION=b.REGION and b.REGION=c.REGION and c.REGION=d.REGION
-group by a.ID,a.REGION) e
-where e.minc>e.minb and e.mind>e.minc and e.mind>e.mina
-此结果对应于分析步骤9中3
+---用HCC_1L_T_AZ表中选择医嘱时间非空的患者
+create table HCC_2L_T as
+  select a.* from HCC_1L_T_AZ a where a.ST_DATE is not null
+
+---用上表左连接PD表且选择医嘱时间小于PD时间小于基表时间的患者
+create table HCC_2L_TT as
+  select a.*,b.ADMISSION_DATE_TIME as PD_DATE from HCC_2L_T a
+  left join HCC_PD_AZ b  
+  on a.ID=b.ID and a.REGION=b.region
+  and a.ST_DATE<=b.ADMISSION_DATE_TIME and b.ADMISSION_DATE_TIME<a.VISIT_TIME
+
+---用上表选择PD时间非空的患者
+create table HCC_2L as
+  select a.* from HCC_2L_TT a where a.PD_DATE is not null
+
+#统计患者（1L和2L）
+---按年份和地区
+select to_char(a.VISIT_TIME,'yyyy') as INDEX_TIME,
+a.REGION,COUNT(DISTINCT a.ID) as PAT_COUNT from HCC_1L a
+group by a.REGION,to_char(a.VISIT_TIME,'yyyy')
+
+---按年份
+select to_char(a.VISIT_TIME,'yyyy') as INDEX_TIME,
+COUNT(DISTINCT a.ID) as PAT_COUNT from HCC_1L a
+group by to_char(a.VISIT_TIME,'yyyy')
+
+
 ```
