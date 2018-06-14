@@ -106,5 +106,16 @@ select to_char(a.VISIT_TIME,'yyyy') as INDEX_TIME,
 COUNT(DISTINCT a.ID) as PAT_COUNT from HCC_1L a
 group by to_char(a.VISIT_TIME,'yyyy')
 
+#后续处理1L
+---筛选不符合条件即有局部治疗的患者
+create table HCC_1L_TACE_SD as
+  select a.*,b.* from HCC_1L a,TEM_OUTP_DISCHARGE_SD b
+  where a.ID=b.ID and a.REGION='山东'
+  and regexp_like(b.TZL_PROCESS,'(介入)|(术后)|(TACE)|(射频消融)|(放疗)')
+
+---筛选在基表时间之后出现上述不符条件的患者并统计人数
+select count(distinct a.ID),to_char(a.VISIT_TIME,'yyyy') from HCC_1L_TACE_SD a
+where a.VISIT_TIME<=a.ADMISSION_DATE_TIME group by to_char(a.VISIT_TIME,'yyyy')
+
 
 ```
