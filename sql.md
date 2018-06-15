@@ -55,7 +55,7 @@ create table HCC_RESULT1_AZ as
   select from HCC_RESULT_STAGING_ID_AZ a,HCC_ASSESSMENT_DATE_AZ b
   where a.ID=b.ID and a.REGION=b.REGION and a.VISIT_TIME=b.VISIT_TIME
 
-#提取1L患者
+#提取1L和2L患者
 
 ---基表左连接EC表，选择EC时间在基表时间之前
 create table HCC_NOEC_AZ as
@@ -67,55 +67,57 @@ create table HCC_NOEC_AZ as
 create table HCC_NOEC as
   select a.* from HCC_NOEC_AZ a where a.EC_DATE is null
 
----用上表左连接医嘱表选择遗嘱时间在基表时间之前
-create table HCC_1L_T_AZ as
-  select a.*,b.START_DATE_TIME as ST_DATE from HCC_NOEC a
-  left join HCC_ORDERS_DATE_AZ b
-  on a.ID=b.ID and a.REGION=b.REGION and a.VISIT_TIME>b.START_DATE_TIME
+---上表左连接出院记录
+create table HCC_NOEC_LOCO_T as
+  select a.*,b.ADMISSION_DATE_TIME as LOCO_DATE
+  from HCC_NOEC a left join TEM_OUTP_DISCHARGE_STATUS b
+  on a.ID=b.ID and a.REGION=b.REGION
+  and regexp_like(b.TZL_PROCESS,'(介入)|(术后)|(TACE)|(射频消融)|(放疗)')
+  and a.VISIT_TIME<=b.ADMISSION_DATE_TIME
 
----在上表基础上选择医嘱时间是空的患者
-create table HCC_1L as
-  select a.* from HCC_1L_T_AZ a where a.ST_DATE is null
+---选择没有局部治疗信息或者这些信息在基表时间之后
+create table HCC_NOEC_NOLOCO as
+  select a.* from HCC_NOEC_LOCO_T a
+  where a.LOCO_DATE is null
 
-
-#提取2L患者
-
----用HCC_1L_T_AZ表中选择医嘱时间非空的患者
-create table HCC_2L_T as
-  select a.* from HCC_1L_T_AZ a where a.ST_DATE is not null
-
----用上表左连接PD表且选择医嘱时间小于PD时间小于基表时间的患者
-create table HCC_2L_TT as
-  select a.*,b.ADMISSION_DATE_TIME as PD_DATE from HCC_2L_T a
-  left join HCC_PD_AZ b  
-  on a.ID=b.ID and a.REGION=b.region
-  and a.ST_DATE<=b.ADMISSION_DATE_TIME and b.ADMISSION_DATE_TIME<a.VISIT_TIME
-
----用上表选择PD时间非空的患者
-create table HCC_2L as
-  select a.* from HCC_2L_TT a where a.PD_DATE is not null
-
-#统计患者（1L和2L）
----按年份和地区
-select to_char(a.VISIT_TIME,'yyyy') as INDEX_TIME,
-a.REGION,COUNT(DISTINCT a.ID) as PAT_COUNT from HCC_1L a
-group by a.REGION,to_char(a.VISIT_TIME,'yyyy')
-
----按年份
-select to_char(a.VISIT_TIME,'yyyy') as INDEX_TIME,
-COUNT(DISTINCT a.ID) as PAT_COUNT from HCC_1L a
-group by to_char(a.VISIT_TIME,'yyyy')
-
-#后续处理1L
----筛选不符合条件即有局部治疗的患者
-create table HCC_1L_TACE_SD as
-  select a.*,b.* from HCC_1L a,TEM_OUTP_DISCHARGE_SD b
-  where a.ID=b.ID and a.REGION='山东'
+---选择那些有局部治疗信息的患者
+create table HCC_NOEC_LOCOREC as
+  select a.*,b.DISCHARGE_DATE_TIME as LOCO_DATE_ALL
+  from HCC_NOEC_NOLOCO a inner join TEM_OUTP_DISCHARGE_STATUS b
+  on a.REGION=b.REGION and a.ID=b.ID
   and regexp_like(b.TZL_PROCESS,'(介入)|(术后)|(TACE)|(射频消融)|(放疗)')
 
----筛选在基表时间之后出现上述不符条件的患者并统计人数
-select count(distinct a.ID),to_char(a.VISIT_TIME,'yyyy') from HCC_1L_TACE_SD a
-where a.VISIT_TIME<=a.ADMISSION_DATE_TIME group by to_char(a.VISIT_TIME,'yyyy')
+---选择进行过全身治疗没有局部治疗
+create table HCC_ORDERS_ST as
+  select c.* from
+  (select a.*,b.LOCO_DATE_ALL from HCC_ORDERS_DATE_AZ a
+  left join HCC_NOEC_LOCOREC b
+  on a.ID=b.ID and a.REGION=b.REGION
+  and a.START_DATE_TIME<=b.LOCO_DATE_ALL) c
+  where c.LOCO_DATE_ALL is null
+
+---选择满足要求且没有局部治疗信息的患者
+create table HCC_1L_NEW_T as
+  select a.*,b.START_DATE_TIME as ST_DATE
+  from HCC_NOEC_NOLOCO a
+  left join HCC_ORDERS_ST b
+  on a.REGION=b.REGION and a.ID=b.ID
+  and b.START_DATE_TIME<a.VISIT_TIME
+
+---1L患者
+create table HCC_1L_NEW as
+  select a.* from HCC_1L_NEW_T a
+  where a.ST_DATE is null
+
+---2L患者
+create table HCC_2L_NEW as
+  select a.* from HCC_1L_NEW_T a
+  where a.ST_DATE is not null
+
+  ```
+
+
+
 
 
 ```
