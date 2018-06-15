@@ -114,7 +114,13 @@ create table HCC_2L_NEW as
   select a.* from HCC_1L_NEW_T a
   where a.ST_DATE is not null
 
-  ```
+---1L和2L人数统计
+select count(distinct a.ID),to_char(a.VISIT_TIME,'yyyy'),a.REGION 
+from HCC_1L_NEW a group by a.REGION,to_char(a.VISIT_TIME,'yyyy')
+
+select count(distinct a.ID),to_char(a.VISIT_TIME,'yyyy'),a.REGION 
+from HCC_2L_NEW a group by a.REGION,to_char(a.VISIT_TIME,'yyyy')
+```
 
 
 
