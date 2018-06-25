@@ -115,12 +115,36 @@ create table HCC_2L_NEW as
   where a.ST_DATE is not null
 
 ---1L和2L人数统计
-select count(distinct a.ID),to_char(a.VISIT_TIME,'yyyy'),a.REGION 
+select count(distinct a.ID),to_char(a.VISIT_TIME,'yyyy'),a.REGION
 from HCC_1L_NEW a group by a.REGION,to_char(a.VISIT_TIME,'yyyy')
 
-select count(distinct a.ID),to_char(a.VISIT_TIME,'yyyy'),a.REGION 
+select count(distinct a.ID),to_char(a.VISIT_TIME,'yyyy'),a.REGION
 from HCC_2L_NEW a group by a.REGION,to_char(a.VISIT_TIME,'yyyy')
-```
+
+---剔除不是原发性肝癌的人
+create table HCC_1L_NEW_2 as
+  select b.*,c.aID from HCC_1L_NEW b left join
+  (select distinct a.id as aID from HCC_1L_NEW t,TEM_INP_ADMISSION_STATUS a
+  where t.ID=a.ID and instr(a.PRELIMINARY_CLINICAL_DIAGNOSIS,'肝癌')<=0
+  and instr(a.PRELIMINARY_CLINICAL_DIAGNOSIS,'肝细胞癌')<=0
+  and instr(a.PRELIMINARY_CLINICAL_DIAGNOSIS,'肝占位')<=0
+  and (instr(a.PRELIMINARY_CLINICAL_DIAGNOSIS,'癌')>0
+       or instr(a.PRELIMINARY_CLINICAL_DIAGNOSIS,'恶性肿瘤')>0 )) c
+  on c.aID=b.ID
+
+---关联现病史
+create table HCC_1L_NEW_2_HY as
+  select a.ID,a.VISIT_TIME as INDEX_DATE,b.VISIT_TIME,b.HY_PRESENT
+  from HCC_1L_NEW_2 a,TEM_INP_ADMISSION_STATUS b
+  where a.ID=b.ID and a.aID is null
+
+---按ID分组并选最后一条
+create table HCC_1L_NEW_3_HY as
+  select * from(
+    select a.*,
+      ROW_NUMBER() over(partition by a.ID,a.INDEX_DATE order by a.VISIT_TIME desc) rn
+      from HCC_1L_NEW_2_HY a)
+  where rn=1
 
 
 
